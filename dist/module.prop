@@ -1,0 +1,6 @@
+id=Trigger-SKRoot
+name=Trigger-SKRoot
+version=v1.0.0
+versionCode=100
+author=Trigger (Vorthas) -> SKRoot port
+description=自启动 | 关闭USB调试 | 解温控 | 游戏清理 | WebUI管理

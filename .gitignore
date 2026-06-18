@@ -1,0 +1,12 @@
+# Build artifacts
+libs/
+obj/
+*.o
+*.so
+
+# SDK (user needs to set up themselves)
+skroot_sdk/
+
+# OS files
+.DS_Store
+Thumbs.db

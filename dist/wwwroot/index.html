@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Trigger-SKRoot</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 16px;
+}
+.header {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #1a1a1a;
+    margin-bottom: 20px;
+}
+.header h1 { font-size: 24px; color: #4ade80; }
+.header .subtitle { font-size: 12px; color: #666; margin-top: 4px; }
+
+.card {
+    background: #141414;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #1e1e1e;
+}
+.card-title {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #1a1a1a;
+}
+.status-row:last-child { border-bottom: none; }
+.status-label { font-size: 15px; }
+.status-value {
+    font-size: 14px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+.status-on { background: #064e3b; color: #4ade80; }
+.status-off { background: #450a0a; color: #f87171; }
+
+.btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.98); opacity: 0.8; }
+.btn-green { background: #166534; color: #4ade80; }
+.btn-green:hover { background: #15803d; }
+.btn-red { background: #7f1d1d; color: #f87171; }
+.btn-red:hover { background: #991b1b; }
+.btn-blue { background: #1e3a5f; color: #60a5fa; }
+.btn-blue:hover { background: #1e40af; }
+.btn-orange { background: #78350f; color: #fb923c; }
+.btn-orange:hover { background: #92400e; }
+
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e1e1e;
+    color: #4ade80;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 999;
+    border: 1px solid #2e2e2e;
+}
+.toast.show { opacity: 1; }
+
+.game-select {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.game-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #888;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.game-btn.active {
+    border-color: #4ade80;
+    color: #4ade80;
+    background: #0a2e1a;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🥑 Trigger-SKRoot</h1>
+    <div class="subtitle">SKRoot Pro 模块 · v1.0.0</div>
+</div>
+
+<div class="card">
+    <div class="card-title">状态</div>
+    <div class="status-row">
+        <span class="status-label">ADB 调试</span>
+        <span class="status-value" id="adb-status">检测中...</span>
+    </div>
+    <div class="status-row">
+        <span class="status-label">温控解除</span>
+        <span class="status-value status-on">✅ 已解除</span>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">快捷操作</div>
+    <button class="btn btn-red" onclick="toggleADB()">🔌 切换 ADB 状态</button>
+    <button class="btn btn-orange" onclick="thermal()">🌡️ 重新解除温控</button>
+</div>
+
+<div class="card">
+    <div class="card-title">游戏缓存清理</div>
+    <div class="game-select">
+        <div class="game-btn active" data-game="dfm" onclick="selectGame(this)">🎯 三角洲行动</div>
+        <div class="game-btn" data-game="codev" onclick="selectGame(this)">🔫 瓦罗兰特</div>
+    </div>
+    <button class="btn btn-blue" onclick="cleanCache()">🧹 一键清理缓存</button>
+</div>
+
+<div class="card">
+    <div class="card-title">说明</div>
+    <div style="font-size: 13px; color: #666; line-height: 1.8;">
+        · ADB 切换：音量下键也可触发<br>
+        · 温控解除：内核级操作，重启后自动生效<br>
+        · 缓存清理：仅清理缓存文件，不影响账号数据<br>
+        · 模块基于 Trigger (GPL-3.0) 改写
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let selectedGame = 'dfm';
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function api(method, path, body) {
+    return fetch(path, {
+        method: method,
+        headers: body ? {'Content-Type': 'application/json'} : {},
+        body: body ? JSON.stringify(body) : undefined
+    }).then(r => r.json());
+}
+
+function loadStatus() {
+    api('GET', '/api/status').then(data => {
+        const adb = document.getElementById('adb-status');
+        if (data.adb_enabled === '1') {
+            adb.textContent = '❌ 开启';
+            adb.className = 'status-value status-off';
+        } else {
+            adb.textContent = '✅ 关闭';
+            adb.className = 'status-value status-on';
+        }
+    });
+}
+
+function toggleADB() {
+    api('POST', '/api/adb').then(data => {
+        showToast(data.result);
+        loadStatus();
+    });
+}
+
+function thermal() {
+    api('POST', '/api/thermal').then(data => {
+        showToast(data.result);
+    });
+}
+
+function selectGame(el) {
+    document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    selectedGame = el.dataset.game;
+}
+
+function cleanCache() {
+    const names = {dfm: '三角洲行动', codev: '瓦罗兰特'};
+    if (!confirm('确定清理 ' + names[selectedGame] + ' 缓存？')) return;
+    api('POST', '/api/clean', {game: selectedGame}).then(data => {
+        showToast(data.result + ' (' + data.cleaned_paths + ' 项)');
+    });
+}
+
+loadStatus();
+</script>
+</body>
+</html>
