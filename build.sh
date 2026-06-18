@@ -1,5 +1,5 @@
 #!/bin/bash
-# Trigger-SKRoot 编译脚本
+# Trigger-SKRoot v1.1.0 编译脚本
 # 需要: Android NDK 26d+
 
 set -e
@@ -26,6 +26,7 @@ $NDK_PATH/ndk-build \
     NDK_PROJECT_PATH=. \
     APP_BUILD_SCRIPT=jni/Android.mk \
     APP_ABI=arm64-v8a \
+    APP_PLATFORM=android-28 \
     -j$(nproc)
 
 # 打包 ZIP
@@ -36,20 +37,23 @@ mkdir -p dist
 cp libs/arm64-v8a/libtrigger_skroot.so dist/trigger_skroot.so
 cp -r wwwroot dist/
 
+# 复制温控配置文件
+cp -r odm dist/
+
 cd dist
 cat > module.prop << 'EOF'
 id=Trigger-SKRoot
 name=Trigger-SKRoot
-version=v1.0.0
-versionCode=100
+version=v1.1.0
+versionCode=110
 author=Trigger (Vorthas) -> SKRoot port
 description=自启动 | 关闭USB调试 | 解温控 | 游戏清理 | WebUI管理
 EOF
 
-zip -r ../Trigger-SKRoot-v1.0.0.zip .
+zip -r ../Trigger-SKRoot-v1.1.0.zip .
 cd ..
 
-echo "✅ 完成: Trigger-SKRoot-v1.0.0.zip"
-echo "   大小: $(du -h Trigger-SKRoot-v1.0.0.zip | cut -f1)"
+echo "✅ 完成: Trigger-SKRoot-v1.1.0.zip"
+echo "   大小: $(du -h Trigger-SKRoot-v1.1.0.zip | cut -f1)"
 echo ""
 echo "安装方法: 在 SKRoot 管理器中刷入此 ZIP"
